@@ -3,6 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        const firebaseHosts = ['sector-seguro-arg.web.app', 'sector-seguro-arg.firebaseapp.com'];
+        if (firebaseHosts.includes(window.location.hostname)) {
+            window.location.replace('/admin-bajas.html');
+        }
+    </script>
     <title>Sector Seguro - Tu broker de seguros de confianza</title>
     <link rel="icon" type="image/png" href="img/favicon-sectorseguro.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
