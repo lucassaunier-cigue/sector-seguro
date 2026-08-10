@@ -1,0 +1,73 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function validContact() {
+      return request.resource.data.nombre is string
+        && request.resource.data.nombre.size() >= 2
+        && request.resource.data.nombre.size() <= 100
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 160
+        && request.resource.data.whatsapp is string
+        && request.resource.data.whatsapp.size() <= 40
+        && request.resource.data.estado == 'Pendiente'
+        && request.resource.data.createdAt is timestamp;
+    }
+
+    match /bajas/{id} {
+      allow create: if validContact()
+        && request.resource.data.keys().hasOnly([
+          'nombre', 'apellido', 'whatsapp', 'email', 'dni', 'patente',
+          'compania', 'experiencia', 'puntuacion', 'motivo', 'comentarios',
+          'estado', 'notas', 'createdAt'
+        ])
+        && request.resource.data.dni is string
+        && request.resource.data.patente is string
+        && request.resource.data.compania is string
+        && request.resource.data.puntuacion is int
+        && request.resource.data.puntuacion >= 1
+        && request.resource.data.puntuacion <= 10;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /siniestros/{id} {
+      allow create: if validContact()
+        && request.resource.data.keys().hasOnly([
+          'nombre', 'whatsapp', 'dni', 'email', 'tipoSeguro', 'fechaSiniestro',
+          'hora', 'lugar', 'localidad', 'descripcion', 'danos', 'comentarios',
+          'estado', 'notas', 'createdAt'
+        ])
+        && request.resource.data.dni is string
+        && request.resource.data.tipoSeguro is string
+        && request.resource.data.descripcion is string
+        && request.resource.data.descripcion.size() <= 3000;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /leads/{id} {
+      allow create: if validContact()
+        && request.resource.data.keys().hasOnly([
+          'nombre', 'apellido', 'email', 'whatsapp', 'seguro', 'marca',
+          'modelo', 'anio', 'comentarios', 'estado', 'notas', 'createdAt'
+        ]);
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

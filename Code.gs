@@ -129,22 +129,26 @@ function doPost(e) {
 // Verificación de que el script está activo
 function doGet(e) {
   if (e && e.parameter && e.parameter.action === 'listBajas') {
-    return listarBajas_(e.parameter.callback, e.parameter.key);
+    return listarBajas_(e.parameter.callback, e.parameter.user, e.parameter.password);
   }
   if (e && e.parameter && e.parameter.action === 'listPanel') {
-    return listarPanel_(e.parameter.callback, e.parameter.key);
+    return listarPanel_(e.parameter.callback, e.parameter.user, e.parameter.password);
   }
   return ContentService.createTextOutput('Sector Seguro - Form Handler activo ✓')
     .setMimeType(ContentService.MimeType.TEXT);
 }
 
-function validarAdmin_(key) {
-  const expected = PropertiesService.getScriptProperties().getProperty('ADMIN_KEY');
-  if (!expected || key !== expected) throw new Error('Acceso no autorizado');
+function validarAdmin_(user, password) {
+  const props = PropertiesService.getScriptProperties();
+  const expectedUser = props.getProperty('ADMIN_USER');
+  const expectedPassword = props.getProperty('ADMIN_PASSWORD');
+  if (!expectedUser || !expectedPassword || user !== expectedUser || password !== expectedPassword) {
+    throw new Error('Acceso no autorizado');
+  }
 }
 
-function listarBajas_(callback, key) {
-  validarAdmin_(key);
+function listarBajas_(callback, user, password) {
+  validarAdmin_(user, password);
   var rows = [];
   SHEET_IDS.forEach(function(id) {
     const sheet = SpreadsheetApp.openById(id).getSheetByName('Bajas');
@@ -163,7 +167,7 @@ function listarBajas_(callback, key) {
 }
 
 function actualizarBaja_(data) {
-  validarAdmin_(data.key);
+  validarAdmin_(data.user, data.password);
   const allowed = ['Pendiente', 'Confirmada', 'Cotizando', 'Recuperado', 'Perdido', 'Anulada'];
   if (allowed.indexOf(data.estado) === -1) throw new Error('Estado inválido');
   for (var s = 0; s < SHEET_IDS.length; s++) {
@@ -180,8 +184,8 @@ function actualizarBaja_(data) {
   throw new Error('Solicitud no encontrada');
 }
 
-function listarPanel_(callback, key) {
-  validarAdmin_(key);
+function listarPanel_(callback, user, password) {
+  validarAdmin_(user, password);
   const result = {success:true, bajas:[], siniestros:[], leads:[]};
   SHEET_IDS.forEach(function(bookId, bookIndex) {
     const book = SpreadsheetApp.openById(bookId);
@@ -215,7 +219,7 @@ function listarPanel_(callback, key) {
 }
 
 function actualizarCaso_(data) {
-  validarAdmin_(data.keyAdmin);
+  validarAdmin_(data.user, data.password);
   const allowedTypes = {bajas:'Bajas', siniestros:'Siniestros', leads:'Leads'};
   const allowedStates = ['Pendiente','En gestión','Contactado','Resuelto','Cerrado','Confirmada','Cotizando','Recuperado','Perdido','Anulada'];
   if (!allowedTypes[data.tipo] || allowedStates.indexOf(data.estado) === -1) throw new Error('Datos inválidos');
