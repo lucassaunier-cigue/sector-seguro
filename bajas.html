@@ -32,10 +32,32 @@
   </main>
   <script type="module" src="firebase-forms.js"></script>
   <script>
-    const SCRIPT_URL='https://script.google.com/macros/s/AKfycbx_KH88shuaVeDeWBjnlqn8d6DzujcY-o44aHP2w_U-cR0ObEeAN0AlNXyEuAqUH4jcrw/exec';let experiencia='',motivo='';
+    const SCRIPT_URL='https://script.google.com/macros/s/AKfycbx_KH88shuaVeDeWBjnlqn8d6DzujcY-o44aHP2w_U-cR0ObEeAN0AlNXyEuAqUH4jcrw/exec';
+    const BAJAS_WHATSAPP_NUMBERS=['5491168360875','5491140873850'];
+    const BAJAS_WHATSAPP_TURN_KEY='sectorSeguroBajasWhatsAppNext';
+    let experiencia='',motivo='';
+
+    function getBajasWhatsAppTurn(){
+      const storedTurn=localStorage.getItem(BAJAS_WHATSAPP_TURN_KEY);
+      if(storedTurn==='0'||storedTurn==='1')return Number(storedTurn);
+      if(window.crypto&&window.crypto.getRandomValues){
+        const randomValue=new Uint32Array(1);
+        window.crypto.getRandomValues(randomValue);
+        return randomValue[0]%BAJAS_WHATSAPP_NUMBERS.length;
+      }
+      return Math.floor(Math.random()*BAJAS_WHATSAPP_NUMBERS.length);
+    }
+
+    function createBajasWhatsAppUrl(message){
+      const currentTurn=getBajasWhatsAppTurn();
+      const nextTurn=(currentTurn+1)%BAJAS_WHATSAPP_NUMBERS.length;
+      localStorage.setItem(BAJAS_WHATSAPP_TURN_KEY,String(nextTurn));
+      return 'https://wa.me/'+BAJAS_WHATSAPP_NUMBERS[currentTurn]+'?text='+encodeURIComponent(message);
+    }
+
     document.querySelectorAll('#moods .choice').forEach(b=>b.onclick=()=>{document.querySelectorAll('#moods .choice').forEach(x=>x.classList.remove('active'));b.classList.add('active');experiencia=b.dataset.value});
     document.querySelectorAll('#reasons .reason').forEach(b=>b.onclick=()=>{document.querySelectorAll('#reasons .reason').forEach(x=>x.classList.remove('active'));b.classList.add('active');motivo=b.textContent});
     puntuacion.oninput=()=>scoreValue.textContent=puntuacion.value;
-    bajaForm.onsubmit=e=>{e.preventDefault();if(!experiencia||!motivo){error.style.display='block';return}error.style.display='none';const btn=e.currentTarget.querySelector('.submit');btn.disabled=true;btn.textContent='Enviando…';const data={formType:'bajas',nombre:nombre.value.trim(),apellido:apellido.value.trim(),whatsapp:whatsapp.value.trim(),email:email.value.trim(),dni:dni.value.trim(),patente:patente.value.trim().toUpperCase(),compania:compania.value.trim(),experiencia,puntuacion:puntuacion.value,motivo,comentarios:comentarios.value.trim()};const message=['*Solicitud de baja*','Nombre: '+data.nombre+' '+data.apellido,'DNI: '+data.dni,'WhatsApp: '+data.whatsapp,'Email: '+data.email,'Patente: '+data.patente,'Compañía: '+data.compania,'Experiencia: '+data.experiencia+' ('+data.puntuacion+'/10)','Motivo: '+data.motivo,'Comentarios: '+(data.comentarios||'Sin comentarios')].join('\n');const waUrl='https://wa.me/5491140452738?text='+encodeURIComponent(message);const firebaseRequest=window.enviarAFirebase?window.enviarAFirebase(data):Promise.reject(new Error('Firebase no disponible'));Promise.all([firebaseRequest,fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(data)})]).then(()=>{bajaForm.style.display='none';success.classList.add('show');waFallback.href=waUrl;waFallback.textContent='Continuar en WhatsApp';window.location.href=waUrl}).catch(()=>{btn.disabled=false;btn.textContent='Dar de baja';alert('No pudimos enviar la solicitud. Intentá nuevamente.')})};
+    bajaForm.onsubmit=e=>{e.preventDefault();if(!experiencia||!motivo){error.style.display='block';return}error.style.display='none';const btn=e.currentTarget.querySelector('.submit');btn.disabled=true;btn.textContent='Enviando…';const data={formType:'bajas',nombre:nombre.value.trim(),apellido:apellido.value.trim(),whatsapp:whatsapp.value.trim(),email:email.value.trim(),dni:dni.value.trim(),patente:patente.value.trim().toUpperCase(),compania:compania.value.trim(),experiencia,puntuacion:puntuacion.value,motivo,comentarios:comentarios.value.trim()};const message=['*Solicitud de baja*','Nombre: '+data.nombre+' '+data.apellido,'DNI: '+data.dni,'WhatsApp: '+data.whatsapp,'Email: '+data.email,'Patente: '+data.patente,'Compañía: '+data.compania,'Experiencia: '+data.experiencia+' ('+data.puntuacion+'/10)','Motivo: '+data.motivo,'Comentarios: '+(data.comentarios||'Sin comentarios')].join('\n');const firebaseRequest=window.enviarAFirebase?window.enviarAFirebase(data):Promise.reject(new Error('Firebase no disponible'));Promise.all([firebaseRequest,fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(data)})]).then(()=>{const waUrl=createBajasWhatsAppUrl(message);bajaForm.style.display='none';success.classList.add('show');waFallback.href=waUrl;waFallback.textContent='Continuar en WhatsApp';window.location.href=waUrl}).catch(()=>{btn.disabled=false;btn.textContent='Dar de baja';alert('No pudimos enviar la solicitud. Intentá nuevamente.')})};
   </script>
 </body></html>
