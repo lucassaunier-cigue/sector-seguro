@@ -16,8 +16,8 @@
 // ============================================================
 
 const SHEET_IDS = [
-  '1z6eN2CUs6bcfaBhhUONoKXp7ByO-stxBgmE_Nzg-Bzk',
-  '1FqKtLSl4d5oEHxhhsVpK1xYfbLgEX6BhdxYKTbvlL6I'
+  '1WV9fI1Dqpiyst3ijw5UPf7JHEPVS3FIVHXUAQkfUX9M',
+  '1hdMC59tgbHv-KcOv_n8ndBAIhqDjiWBtON52HUEaxZQ'
 ];
 
 function doPost(e) {
